@@ -1,0 +1,35 @@
+[package]
+name = "gstrtppace"
+description = "Custom GStreamer RTP pacing element to use with WebRTC"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/pando-emil/gst-rtppace-rs.git"
+authors = ["Axis Communications AB"]
+license = "MPL-2.0"
+
+[dependencies]
+gst = { package = "gstreamer", version = "0.22.5", features = ["v1_22"] }
+gst_base = { package = "gstreamer-base", version = "0.22.0" }
+once_cell = "1.0"
+smallvec = { version = "1.13.2", features = ["union", "write", "const_generics", "const_new"] }
+time = { version = "0.3", default-features = false, features = ["std"] }
+
+[build-dependencies]
+winresource = "0.1.17"
+
+[lib]
+name = "gstrtppace"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[package.metadata.winresource]
+LegalCopyright = "Axis Communications AB"
+
+[profile.release]
+lto = true
+opt-level = 3
+debug = true
+panic = 'unwind'
+
+[profile.dev]
+opt-level = 1
