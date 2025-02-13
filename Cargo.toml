@@ -22,6 +22,9 @@ name = "gstrtppace"
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
+[features]
+doc = []
+
 [package.metadata.winresource]
 LegalCopyright = "Axis Communications AB"
 
