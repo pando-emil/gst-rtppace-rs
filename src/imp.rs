@@ -588,7 +588,7 @@ impl Detector {
                     "Packet group done: {:?}",
                     gst::ClockTime::from_nseconds(group.departure.whole_nanoseconds() as u64)
                 );
-                if let Some(prev_group) = mem::replace(&mut self.prev_group, Some(group.clone())) {
+                if let Some(prev_group) = self.prev_group.replace(group.clone()) {
                     // 5.3 Arrival-time filter
                     self.estimator_impl.update(&prev_group, &group);
                     // 5.4 Over-use detector
@@ -744,7 +744,7 @@ impl ExponentialMovingAverage {
     }
 
     fn estimate_is_close(&self, value: Bitrate) -> bool {
-        self.average.map_or(false, |avg| {
+        self.average.is_some_and(|avg| {
             ((avg - STANDARD_DEVIATION_CLOSE_NUM * self.standard_dev)
                 ..(avg + STANDARD_DEVIATION_CLOSE_NUM * self.standard_dev))
                 .contains(&(value as f64))
@@ -871,7 +871,7 @@ impl State {
 
         gst::trace!(
             CAT,
-            obj: bwe,
+            obj = bwe,
             "bitrate: {}ps budget: {}/{} sending: {} Remaining: {}/{} burst latency: {}",
             human_kbits(self.estimated_bitrate),
             human_kbits(budget as f64),
@@ -961,7 +961,7 @@ impl State {
             if rate > received_max && received_max > self.target_bitrate_on_delay as f64 {
                 gst::log!(
                     CAT,
-                    obj: bwe,
+                    obj = bwe,
                     "Increasing == received_max rate: {}ps - effective bitrate: {}ps",
                     human_kbits(received_max),
                     human_kbits(effective_bitrate),
@@ -975,7 +975,7 @@ impl State {
             } else if rate < self.target_bitrate_on_delay as f64 {
                 gst::log!(
                     CAT,
-                    obj: bwe,
+                    obj = bwe,
                     "Rate < target, returning {}ps - effective bitrate: {}ps",
                     human_kbits(self.target_bitrate_on_delay),
                     human_kbits(effective_bitrate),
@@ -985,7 +985,7 @@ impl State {
             } else {
                 gst::log!(
                     CAT,
-                    obj: bwe,
+                    obj = bwe,
                     "Increase mult {eta}x{}ps={}ps - effective bitrate: {}ps",
                     human_kbits(self.target_bitrate_on_delay),
                     human_kbits(rate),
@@ -1014,7 +1014,7 @@ impl State {
 
         gst::info!(
             CAT,
-            obj: bwe,
+            obj = bwe,
             "{}ps => {}ps ({:?}) - effective bitrate: {}ps",
             human_kbits(prev_bitrate),
             human_kbits(target_bitrate),
@@ -1030,12 +1030,7 @@ impl State {
     fn set_burst_latency(&mut self, bwe: &super::BandwidthEstimator, latency: Duration) -> bool {
         let new_latency = latency.clamp(self.min_burst_latency, self.max_burst_latency);
 
-        gst::info!(
-            CAT,
-            obj: bwe,
-            "new latency: {}",
-            new_latency,
-        );
+        gst::info!(CAT, obj = bwe, "new latency: {}", new_latency,);
 
         self.target_burst_latency = new_latency;
 
@@ -1195,7 +1190,7 @@ impl BandwidthEstimator {
             if !list.is_empty() {
                 if let Err(err) = bwe.imp().push_list(list) {
                     if err != gst::FlowError::Flushing {
-                        gst::error!(CAT, obj: bwe, "pause task, reason: {err:?}");
+                        gst::error!(CAT, obj = bwe, "pause task, reason: {err:?}");
                     }
                     pause()
                 }
@@ -1304,7 +1299,7 @@ impl ObjectSubclass for BandwidthEstimator {
                                     if let Some(bitrates) = logged_changes {
                                         gst::log!(
                                             CAT,
-                                            obj: bwe,
+                                            obj = bwe,
                                             "target bitrate: {}ps - target burst latency: {}",
                                             human_kbits(bitrates.0),
                                             bitrates.1,
